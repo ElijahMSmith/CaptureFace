@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">CaptureFace</string>
+    <string name="display_images_taken_by_application">Display images taken by application.</string>
+    <string name="nothing_to_show">Nothing to Show!</string>
+</resources>
