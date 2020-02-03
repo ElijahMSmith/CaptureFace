@@ -149,8 +149,19 @@ public class MainActivity extends ActionMenuActivity {
                     // do something with results
                     //UNPACK RETURN DATA AND DISPLAY TO USER
                     Bundle returnExtras = intent.getExtras();
-                    if(returnExtras != null && returnExtras.getString("toast") != null)
-                        Toast.makeText(getApplicationContext(), "Return: " + returnExtras.getString("toast"), Toast.LENGTH_LONG).show();
+
+                    Log.d("Debug", "------------------------------------");
+                    if (returnExtras != null) {
+                        for (String key : returnExtras.keySet()) {
+                            Log.d("Debug", key + " : " + (returnExtras.get(key) != null ? returnExtras.get(key) : "NULL"));
+                        }
+                    }
+                    Log.d("Debug", "------------------------------------");
+
+                    /*if(returnExtras != null && returnExtras.getString("toast") != null)
+                        Log.d("Debug", "Return: " + returnExtras.getString("toast"));
+                    else
+                        Log.d("Debug", "Couldn't retrieve return data");*/
                 }
             }
         });
