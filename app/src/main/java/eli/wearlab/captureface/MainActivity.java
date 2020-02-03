@@ -1,6 +1,8 @@
 package eli.wearlab.captureface;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -14,6 +16,8 @@ import android.widget.Toast;
 
 import androidx.core.content.FileProvider;
 
+import com.vuzix.connectivity.sdk.Connectivity;
+import com.vuzix.connectivity.sdk.Device;
 import com.vuzix.hud.actionmenu.ActionMenuActivity;
 
 import java.io.ByteArrayOutputStream;
@@ -29,11 +33,9 @@ import eli.wearlab.captureface.receiver.CaptureCommandReceiver;
 public class MainActivity extends ActionMenuActivity {
 
     private CaptureCommandReceiver captureReceiver;
-    //private Context context;
-    //private Connectivity connection;
+    private Connectivity connection;
     static final int REQUEST_TAKE_PHOTO = 1;
     private ImageView image;
-    private String currentPhotoPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,8 +44,8 @@ public class MainActivity extends ActionMenuActivity {
         captureReceiver = new CaptureCommandReceiver(this);
         image = findViewById(R.id.imageView);
         image.setVisibility(ImageView.INVISIBLE);
-        //context = getContext();
-        //connection = Connectivity.get(context);
+        Context context = getContext();
+        connection = Connectivity.get(context);
     }
 
     @Override
@@ -58,8 +60,15 @@ public class MainActivity extends ActionMenuActivity {
         if (requestCode == 1 && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
+
+            if(imageBitmap == null) {
+                Toast.makeText(this, "Couldn't retrieve picture!", Toast.LENGTH_LONG).show();
+                return;
+            }
+
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+            byte[] byteData = bytes.toByteArray();
 
             File photoFile;
             try {
@@ -73,7 +82,7 @@ public class MainActivity extends ActionMenuActivity {
             FileOutputStream fo;
             try {
                 fo = new FileOutputStream(photoFile);
-                fo.write(bytes.toByteArray());
+                fo.write(byteData);
                 fo.close();
             } catch (Exception e) {
                 Log.e("Debug", "FILE IO EXCEPTION");
@@ -83,37 +92,16 @@ public class MainActivity extends ActionMenuActivity {
             image.setImageBitmap(imageBitmap);
             image.setVisibility(View.VISIBLE);
             galleryAddPic(photoFile);
+
+            sendImage(byteData);
         }
     }
 
     public void takeCapture(){
-
-        Toast.makeText(this, "Trying to take picture!", Toast.LENGTH_SHORT).show();
-
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         // Ensure that there's a camera activity to handle the intent
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            // Create the File where the photo should go
-            /*File photoFile;
-            try {
-                photoFile = createImageFile();
-            } catch (IOException ex) {
-                // Error occurred while creating the File
-                Log.e("Debug", "Couldn't create file!");
-                return;
-            }
-
-            // Continue only if the File was successfully created
-            currentPhotoPath = photoFile.getAbsolutePath();
-            Uri photoURI = FileProvider.getUriForFile(this, "eli.wearlab.captureface.provider", photoFile);
-            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);*/
             startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
-
-
-            /*Toast.makeText(getApplicationContext(), photoFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-            image.setImageURI(photoURI);
-            image.setVisibility(View.VISIBLE);
-            galleryAddPic(); //Adds photo to gallery app and makes it available for everything else*/
         }
     }
 
@@ -139,39 +127,7 @@ public class MainActivity extends ActionMenuActivity {
         this.sendBroadcast(mediaScanIntent);
     }
 
-    /*
-
-    private void setPic() {
-        // Get the dimensions of the View
-        int targetW = imageView.getWidth();
-        int targetH = imageView.getHeight();
-
-        // Get the dimensions of the bitmap
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-
-        // Determine how much to scale down the image
-        int scaleFactor = Math.min(photoW/targetW, photoH/targetH);
-
-        // Decode the image file into a Bitmap sized to fill the View
-        bmOptions.inJustDecodeBounds = false;
-        bmOptions.inSampleSize = scaleFactor;
-        bmOptions.inPurgeable = true;
-
-        Bitmap bitmap = BitmapFactory.decodeFile(currentPhotoPath, bmOptions);
-        imageView.setImageBitmap(bitmap);
-    }
-
-
-     */
-
-
-
-
-    /*protected void sendImage(File f){
+    private void sendImage(byte[] imageData){
         //Do connectivity stuff here
 
         if(!connection.isLinked()){
@@ -179,13 +135,10 @@ public class MainActivity extends ActionMenuActivity {
             return;
         }
 
-        //Bitmap conversion here
-
-
-        String SEND_ACTION = "eli.alex.vuzixtakephoto.SEND_IMAGE";
+        String SEND_ACTION = "eli.wearlab.captureface.SEND_IMAGE";
         Intent sendBroadcast = new Intent(SEND_ACTION);
         sendBroadcast.setPackage("eli.wearlab.capturefacecompanion");
-        sendBroadcast.putExtra("", "");//FILL IN WITH BITMAP
+        sendBroadcast.putExtra("data", imageData);
 
         Device device = connection.getDevice();
 
@@ -195,9 +148,12 @@ public class MainActivity extends ActionMenuActivity {
                 if (getResultCode() == RESULT_OK) {
                     // do something with results
                     //UNPACK RETURN DATA AND DISPLAY TO USER
+                    Bundle returnExtras = intent.getExtras();
+                    if(returnExtras != null && returnExtras.getString("toast") != null)
+                        Toast.makeText(getApplicationContext(), "Return: " + returnExtras.getString("toast"), Toast.LENGTH_LONG).show();
                 }
             }
         });
 
-    }*/
+    }
 }
