@@ -56,7 +56,6 @@ public class MainActivity extends ActionMenuActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        Toast.makeText(this, "RESULT", Toast.LENGTH_SHORT).show();
         if (requestCode == 1 && resultCode == RESULT_OK) {
             Bundle extras = data.getExtras();
             Bitmap imageBitmap = (Bitmap) extras.get("data");
@@ -148,7 +147,7 @@ public class MainActivity extends ActionMenuActivity {
                 if (getResultCode() == RESULT_OK) {
                     // do something with results
                     //UNPACK RETURN DATA AND DISPLAY TO USER
-                    Bundle returnExtras = intent.getExtras();
+                    Bundle returnExtras = getResultExtras(false);
 
                     Log.d("Debug", "------------------------------------");
                     if (returnExtras != null) {
